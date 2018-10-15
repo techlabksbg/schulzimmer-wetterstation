@@ -37,7 +37,7 @@ void MySensors::measure() {
   temp[0] = hdc1080.readTemperature();
   humidity = hdc1080.readHumidity();
   if(ccs.available() && !ccs.readData()){
-    temp[1] = ccs.calculateTemperature();
+    temp[1] = (ccs.calculateTemperature()-32.0-25.0)/1.8;
     ppbTVOC = ccs.getTVOC();
     approxppmCO2 = ccs.geteCO2();
   } else {
