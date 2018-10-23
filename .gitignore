@@ -5,3 +5,4 @@ debug
 doc
 *.log
 webserver/*.bash
+webserver/concentrator/mqtt.uri

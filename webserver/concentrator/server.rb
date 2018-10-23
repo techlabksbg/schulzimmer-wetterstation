@@ -1,13 +1,15 @@
 require 'fileutils'
 require 'sinatra'
+require 'mqtt'
 
 set :port, 4568
 set :bind, '0.0.0.0'
 
-
-$LOGFILE = "/home/techlab/schulzimmer-wetterstation/concentrator.log"
-$TEMPFILE = "/home/techlab/schulzimmer-wetterstation/temp.json"
+$APPDIR = "/home/techlab/schulzimmer-wetterstation/"
+$LOGFILE = $APPDIR+"concentrator.log"
+$TEMPFILE = $APPDIR+"temp.json"
 $DATADIR = "/var/www/html/schulzimmer-wetterstation/"
+$MQTTURI = File.exist?($APPDIR+"mqtt.uri") ? File.read($APPDIR+"mqtt.uri").chomp : "mqtt://localhost"
 if ENV['USER']=="ivo"
   $DATADIR = "./"
   $LOGFILE = "loraconcentrator.log"
@@ -57,6 +59,16 @@ def storePacket(packet)
   File.write($TEMPFILE,contents)
   File.rename($TEMPFILE,file)
   log("FILE=#{file}")
+end
+
+def mqtt(packet)
+  log("Publish to mqtt")
+  client = MQTT::Client.connect($MQTTURI) {|c|
+    %w(co2 tvoc temp humidity).each{|key|
+      c.publish("rooms/#{packet['room']}/#{key}", packet[key][0])
+      #log("rooms/#{packet['room']}/#{key}, "+packet[key][0].to_s)
+    }
+  }
 end
 
 def getLEint(hex, pos, nr)
@@ -126,6 +138,7 @@ get '/loraconcentrator/packetin/:hex' do
     log(decodePacket(hex).inspect)
     log(j)
     storePacket(p)
+    mqtt(p)
     return "OK"
   else
     log("Rejected packet for wrong checksum: #{hex}")
