@@ -1,4 +1,7 @@
 external
 external/*
 *~
-
+debug
+doc
+*.log
+webserver/*.bash
