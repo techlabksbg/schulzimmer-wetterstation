@@ -8,7 +8,7 @@
 #define BAND    868E6 // 433E6  //915E6 
 int spreadingFactor = 9;  // (7-12)
 float bandwidth = 31.25E3; // {7.8E3, 10.4E3, 15.6E3, 20.8E3, 31.25E3, 41.7E3, 62.5E3, 125E3, 250E3};
-
+#include <SPI.h>
 
 void loraSetParams() {
   Serial.printf("Setting spread to %d and bandwith to %f\r\n", spreadingFactor,bandwidth);
@@ -26,7 +26,7 @@ void loraSetParams() {
 
 void loraSetup() {
   Serial.println("Setting up LoRa");
-//  SPI.begin(5,19,27,18);
+  SPI.begin(5,19,27,18);
   LoRa.setPins(SS,RST,DI0);
 
   loraSetParams();
@@ -54,13 +54,14 @@ void loop() {
   if (packetLength) {
     for (int i=0; LoRa.available(); i++) {
       if (i<sizeof(packetBuffer)) {
-        PacketBuffer[i]=(unsigned char)LoRa.read();
+        packetBuffer[i]=(unsigned char)LoRa.read();
       } else {
         packetLength=0;
       }
     }
     if (packetLength) {
-      Serial.println("Got Packet of length %d\r\n-->", packetLength);
+      int rssi = LoRa.packetRssi();
+      Serial.printf("pkt len=%d, rssi=%d\r\n-->", packetLength, rssi);
       for (int i=0; i<packetLength; i++) {
         Serial.printf("%02x", packetBuffer[i]);
       }

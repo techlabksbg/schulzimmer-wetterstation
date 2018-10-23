@@ -2,8 +2,18 @@
 require 'serialport'
 require 'net/http'
 
-$SERVERURL = "http://www.tech-lab.ch/loraconcentrator/packetin/"
+$SERVER = "www.tech-lab.ch"
+$PORT = 4568
+$URL = "/loraconcentrator/packetin/"
 $LOGFILE = "relais.log"
+
+if ENV['USER']=="ivo"
+  $SERVER = "localhost"
+  $LOGFILE = "relais.log"
+end
+
+
+$SEMAPHORE = Mutex.new
 
 class Relais
   def initialize(port=nil)
@@ -18,6 +28,7 @@ class Relais
     unless @sp      
       err("Could not open Serial Port! Tried #{@ports.inspect}")
     end
+    @rssi = nil
   end
 
   
@@ -27,18 +38,20 @@ class Relais
   end
   
   def log(what)
-    # TODO: Add Mutex for this block!
-    log = File.open($LOGFILE,"a")
-    what = Time.now.to_s+","+what
-    log.puts(what)
-    puts what
-    log.close
+    $SEMAPHORE.synchronize {
+        log = File.open($LOGFILE,"a")
+        what = Time.now.to_s+","+what
+        log.puts(what)
+        puts what
+        log.close
+    }
   end
 
 
   def reset()
-    # TODO: Do some serial port magic to hardware reset ESP32
-    # Fallback: Send some reset code for software reset
+    @sp.dtr=0;
+    sleep(0.01)
+    @sp.dtr=1;
   end
 
   def setChannel(freq, rate, spread)
@@ -58,32 +71,38 @@ class Relais
     return res
   end
 
-  # Packet: First Byte is length, then contents of said length
-  # TODO: NEW: Packet now directly hex-Code, starting with
+  # Packet now directly hex-Code, starting with
   # "-->", ending with "\r\n"
   def checkForPacket()
     c = @sp.getc
     return false unless c
-    log("About to receive a packet of size #{c.ord}")
-    hex = ""
-    c.ord.times{|i|
-      b = nil
-      # Wait for next byte
-      timeout = 1000
-      while (!(b=@sp.getc))
-        sleep(0.001)
-        timeout-=1
-        if (timeout==0)
-          log("Timeout receiving packet")
-          return false
+    # log("About to receive a packet of size #{c.ord}")
+    # hex = ""
+    line = c
+    b = nil
+    while (line.size==0 || line[-1]!="\n")
+        # Wait for next byte
+        timeout = 1000
+        while (!(b=@sp.getc))
+            sleep(0.001)
+            timeout-=1
+            if (timeout==0)
+            log("Timeout receiving packet")
+            return false
+            end
         end
-      end
-      # Append to hexString
-      hex += "%02x" % (b.ord)
-    }
-    log("Received packet #{hex}")
-    @packets.push(Time.now.to_s+","+hex)
-    return hex
+        line += b
+    end
+    log("[IN] #{line}")
+    if (line[0..2]=="-->")
+        hex = line[3..-3]
+        @packets.push(hex)
+        return hex
+    else
+      @rssi = line.scan(/rssi=(-\d+)/)[0]
+      @rssi = "?rssi=#{@rssi[0]}" if @rssi
+    end
+    return false
   end
 
   def getPackets()
@@ -92,20 +111,37 @@ class Relais
 
   # Waits for a packet and forwards it to the server
   def loop()
+    lastsuccess = Time.now
     while true
       hex = checkForPacket()
       if hex
-        # HTTP acces
-        url = "#{$SERVERURL}#{hex}"
-        res = Net::HTTP.get(url)
-        log("#{url} => #{res}")
+        lastsuccess = Time.now
+        begin
+          # HTTP acces
+          uri = URI("http://#{$SERVER}:#{$PORT}#{$URL}#{hex}#{@rssi}")
+          res = Net::HTTP.get_response(uri)
+          if (res.body=="OK")
+            log("   [OK]  Sucessfully submitted to server")
+          else
+            log(" [WTF?] Server says #{res.body} #{res.inspect}")
+          end
+        rescue StandardError => e  
+          log(e.message)
+          # log(e.backtrace.inspect)          
+        end
+      else
+        if (Time.now-lastsuccess>60) # Nichts gehoehrt waehrend 60 Sek?
+          reset()
+          log("Timeout on LORA/ESP32, reset EPS32...")
+          lastsuccess = Time.now
+        end
       end
       sleep(0.01)
     end
   end
 end
 
-r = Relais.new()
+r = Relais.new(ARGV[0])
 
 Thread.new() {
   r.loop()
@@ -123,6 +159,11 @@ get "/channel" do
   return r.getChannel()
 end
 
+get "/reset" do
+  r.reset()
+  return "Sent reset command"
+end
+
 
 # Set Channel
 # TODO: Parameterübergabe
@@ -132,7 +173,7 @@ put "/channel/:setting" do |setting|
 end
 
 
-
+=begin
 # Routes may also utilize query parameters:
 
 get '/posts' do
@@ -141,3 +182,5 @@ get '/posts' do
   author = params['author']
   # uses title and author variables; query is optional to the /posts route
 end
+
+=end

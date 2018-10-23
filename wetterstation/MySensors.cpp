@@ -27,6 +27,7 @@ void MySensors::begin(int co2rx, int co2tx, int sda, int scl) {
     ccs.setTempOffset(-65.0);
     delay(2000);
   }
+  enableABC();
 }
 
 
@@ -40,18 +41,51 @@ void MySensors::measure() {
     temp[1] = (ccs.calculateTemperature()-32.0-25.0)/1.8;
     ppbTVOC = ccs.getTVOC();
     approxppmCO2 = ccs.geteCO2();
+    status = 1;
   } else {
     ppbTVOC=0xffff;
+    status = 0;
   }
   ppmCO2 = readCO2UART();
-  if (ppmCO2!=0 && ppmCO2!=410 && ppbTVOC!=0xffff) {
+  if (ppmCO2!=0 && ppmCO2!=410 && ppbTVOC!=0xffff && status) {
     status = 1;
+  } else {
+    status = 0;
+  }
+  if (status==1) {
+    for (int i=0; i<3; i++) temps[i]+=temp[i];
+    humids+=humidity;
+    co2s+=ppmCO2;
+    aco2s+=approxppmCO2;
+    tvocs+=ppbTVOC;
+    n++;
+  } else {
+    clearSums();
   }
 }
 
+void MySensors::clearSums() {
+  for (int i=0; i<3; i++) temps[i]=0.0;
+  humids=0.0;
+  co2s=0.0;
+  aco2s=0.0;
+  tvocs=0.0;
+  n = 0;
+}
 
-// The following code is derived from another source, 
-// I cannot trace back any more :-(
+
+void MySensors::compute() {
+  if (n>0) {
+    humidity = humids/n;
+    for (int i=0; i<3; i++) temp[i]=temps[i]/n;
+    ppmCO2 = (unsigned int) (co2s/n);
+    approxppmCO2 = (unsigned int) (aco2s/n);
+    ppbTVOC = (unsigned int)(tvocs/n);
+    clearSums();
+    status = 1;
+  } 
+}
+
 
 void MySensors::clearSerialBuffer() {
   while (co2Serial.available()>0) {
@@ -59,6 +93,10 @@ void MySensors::clearSerialBuffer() {
     delay(2);
   }
 }
+
+// The following code is derived from another source, 
+// I cannot trace back any more :-(
+
 
 unsigned char MySensors::getCheckSum(unsigned char *packet) {
   unsigned char checksum = 0;
@@ -91,6 +129,23 @@ unsigned int MySensors::readCO2UART(){
   clearSerialBuffer();
   if (ppm==0) status=0;
   return ppm;
+}
+
+// Enables auto-calibration (every 24h the lowest co2-value is calibrated to 410 (or something like that))
+void MySensors::enableABC() {
+  unsigned char cmd[9] = {0xFF,0x01,0x79,0x00,0x00,0x00,0x00,0x00,0x86};
+  clearSerialBuffer();
+  co2Serial.write(cmd, 9); //send command
+  Serial.println("ABC enabled");  
+}
+
+// Calibrates the current value to 410 ppm (or something like that)
+// Better use manual anyway
+void MySensors::setZeroPoint(){
+  unsigned char cmd[9] = {0xFF,0x01,0x87,0x00,0x00,0x00,0x00,0x00,0x78};
+  clearSerialBuffer();
+  co2Serial.write(cmd, 9); //send command
+  Serial.println("Wrote setZeroPoint command");
 }
 
 
