@@ -49,9 +49,14 @@ class Relais
 
 
   def reset()
-    @sp.dtr=0;
-    sleep(0.01)
-    @sp.dtr=1;
+    begin
+      @sp.dtr=0;
+      sleep(0.01)
+      @sp.dtr=1;
+    rescue StandardError => e  
+      log("Reset failed!")
+      log(e.message)
+    end
   end
 
   def setChannel(freq, rate, spread)
@@ -130,9 +135,9 @@ class Relais
           # log(e.backtrace.inspect)          
         end
       else
-        if (Time.now-lastsuccess>60) # Nichts gehoehrt waehrend 60 Sek?
-          reset()
+        if (Time.now-lastsuccess>200) # Nichts gehoehrt waehrend 200 Sek?
           log("Timeout on LORA/ESP32, reset EPS32...")
+          reset()
           lastsuccess = Time.now
         end
       end
@@ -142,6 +147,11 @@ class Relais
 end
 
 r = Relais.new(ARGV[0])
+
+if ARGV[1]
+  r.reset()
+  exit
+end
 
 Thread.new() {
   r.loop()
