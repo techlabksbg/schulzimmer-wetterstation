@@ -1,6 +1,11 @@
 # coding: utf-8
 require 'serialport'
 require 'net/http'
+require 'io/wait'
+require 'sinatra'
+
+set :bind, '0.0.0.0'
+
 
 $SERVER = "www.tech-lab.ch"
 $PORT = 4568
@@ -49,14 +54,17 @@ class Relais
 
 
   def reset()
+    ok = false
     begin
       @sp.dtr=0;
       sleep(0.01)
       @sp.dtr=1;
+      ok = true
     rescue StandardError => e  
       log("Reset failed!")
       log(e.message)
     end
+    return ok
   end
 
   def setChannel(freq, rate, spread)
@@ -79,6 +87,7 @@ class Relais
   # Packet now directly hex-Code, starting with
   # "-->", ending with "\r\n"
   def checkForPacket()
+    return false unless @sp.ready?()
     c = @sp.getc
     return false unless c
     # log("About to receive a packet of size #{c.ord}")
@@ -134,15 +143,14 @@ class Relais
           log(e.message)
           # log(e.backtrace.inspect)          
         end
-      else
-        if (Time.now-lastsuccess>200) # Nichts gehoehrt waehrend 200 Sek?
-          log("Timeout on LORA/ESP32, reset EPS32...")
-          reset()
-          lastsuccess = Time.now
-        end
+      end
+      if (Time.now-lastsuccess>200) # Nichts gehoehrt waehrend 200 Sek?
+        log("Timeout on LORA/ESP32, reset EPS32...")
+        reset()
+        lastsuccess = Time.now
       end
       sleep(0.01)
-    end
+    end # while
   end
 end
 
@@ -170,8 +178,7 @@ get "/channel" do
 end
 
 get "/reset" do
-  r.reset()
-  return "Sent reset command"
+  return r.reset() ? "Reset OK" : "Reset failed :-("
 end
 
 
