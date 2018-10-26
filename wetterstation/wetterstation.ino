@@ -4,7 +4,7 @@ unsigned int packetID = 0;
 #include <ESP32Servo.h>
 Servo myservo;  // create servo object to control a servo
 #define SERVOPIN 17
-float servomap[][2]={{400,1000},{1200,1500},{5000,2000}};
+float servomap[][2]={{400,2200},{1000,1200},{5000,600}};
 
 #include "MySensors.h"
 MySensors mySensors;
@@ -65,6 +65,9 @@ void calibrate() {
   }  
 }
 
+
+int currentUS;
+
 void setup() {
   Serial.begin(115200);
   Serial.print("Setting up Sensors... ");
@@ -74,7 +77,8 @@ void setup() {
   Serial.println("Initializing LoRa");
   loraSetup();
   myservo.attach(SERVOPIN);
-  myservo.writeMicroseconds(servomap[0][1]);
+  currentUS = servomap[0][1];
+  setServo();
 }
 
 unsigned char packetBuffer[255];
@@ -150,24 +154,34 @@ void sendPacket() {
 
 int counter=0;
 
-void setServo(int ppm) {
+int getServoUS(int ppm) {
+  if (ppm < servomap[0][0]) {
+    return servomap[0][1];
+  }
+  if (ppm > servomap[2][0]) {
+    return servomap[2][1];
+  }
   int us = 0;
   int i = 0;
   if (ppm>=servomap[1][0]) {
     i=1;
   }
   us = (int)(servomap[i][1]+(servomap[i+1][1]-servomap[i][1])*(ppm-servomap[0][0])/(servomap[i+1][0]-servomap[i][0]));
-  Serial.printf("Servo: %d us\r\n",us);
-  myservo.writeMicroseconds(us);
-  //delay(20);
-  //myservo.detach();
+  return us;
 }
+
+void setServo() {
+  myservo.writeMicroseconds(currentUS);
+}
+
 
 void loop() {
   Serial.println("Measuring...");
+  int targetUS=-1;
   mySensors.measure();
   if (mySensors.status) {
-    setServo(mySensors.ppmCO2);
+    targetUS=getServoUS(mySensors.ppmCO2);
+    Serial.printf("Target Servo: %d us\r\n",targetUS);
     Serial.printf("CO2=%d ppm (approx %d), TVOC=%d bpm, Temp0=%f C, Temp1=%f C, Temp2=%f C, RelHum=%f %%\r\n",
       mySensors.ppmCO2, mySensors.approxppmCO2, mySensors.ppbTVOC, mySensors.temp[0], mySensors.temp[1], mySensors.temp[2], mySensors.humidity);    
     if (counter>5) {
@@ -183,6 +197,16 @@ void loop() {
     Serial.printf("CO2=%d ppm (approx %d), TVOC=%d bpm, Temp0=%f C, Temp1=%f C, Temp2=%f C, RelHum=%f %%\r\n",
       mySensors.ppmCO2, mySensors.approxppmCO2, mySensors.ppbTVOC, mySensors.temp[0], mySensors.temp[1], mySensors.temp[2], mySensors.humidity);
   }
-  delay(5000);
+  if (targetUS!=-1) {
+    int diff =  targetUS - currentUS;
+    int cur = currentUS;
+    for (int i=0; i<250; i++) {
+      currentUS = cur + diff*i/250;
+      setServo();
+      delay(19);
+    }
+  } else {
+    delay(5000);
+  }
   counter++;
 }
