@@ -2,7 +2,7 @@ d3.json('h21/'+((new Date()).toISOString().slice(0,10))+'.json').then(function(d
     data.forEach(function(x) {
 	x['date']=new Date(x['timestamp']);
 	x['co2']=x['co2'][0];
-	x['temp']=x['temp'][0]-6.0;
+	x['temp']=x['temp'][0]-8.0;
 	x['tvoc']=x['tvoc'][0];
 	x['humidity']=x['humidity'][0];
     });
