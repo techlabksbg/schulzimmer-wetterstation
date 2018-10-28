@@ -4,7 +4,7 @@ unsigned int packetID = 0;
 #include <ESP32Servo.h>
 Servo myservo;  // create servo object to control a servo
 #define SERVOPIN 17
-float servomap[][2]={{400,2200},{1000,1200},{5000,600}};
+float servomap[][2]={{400,2200},{1500,1200},{5000,600}};
 
 #include "MySensors.h"
 MySensors mySensors;
@@ -166,7 +166,7 @@ int getServoUS(int ppm) {
   if (ppm>=servomap[1][0]) {
     i=1;
   }
-  us = (int)(servomap[i][1]+(servomap[i+1][1]-servomap[i][1])*(ppm-servomap[0][0])/(servomap[i+1][0]-servomap[i][0]));
+  us = (int)(servomap[i][1]+(servomap[i+1][1]-servomap[i][1])*(ppm-servomap[i][0])/(servomap[i+1][0]-servomap[i][0]));
   return us;
 }
 

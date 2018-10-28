@@ -26,6 +26,14 @@ $CONVERTERS ={'temp'=>lambda{|x| x*0.1-273.0},
               'humidity'=>lambda{|x| x*0.01}
              }
 
+# Catch bogous value due to transmission errors with
+# per chance correct check sum
+$VALIDATORS = {'temp'=>lambda{|x| x>=0.0 && x<=40},
+               'humidity'=>lambda{|x| x>=10.0 && x<=90.0},
+               'co2'=>lambda{|x| x>350 && x<=5000},
+               'tvoc'=>lambda{|x| x>=0 && x<=3000}
+              }
+
 $SEMAPHORE = Mutex.new
 
 
@@ -79,6 +87,7 @@ def getLEint(hex, pos, nr)
   return res
 end
 
+# Returns false, if values do not validate
 def decodePacket(hex,rssi=nil)
   res = {'station'=>getLEint(hex,0,2),
          'packetID'=>getLEint(hex,2,2),
@@ -89,17 +98,26 @@ def decodePacket(hex,rssi=nil)
   res['room']=$STATIONDEFS[res['station']]['name']
   res['rssi']=rssi if rssi
   pos = 2
+  allvalid = true
   $STATIONDEFS[res['station']]['measures'].each{|mdef|
     res[mdef[0]] = Array.new(mdef[1]){|p|
       err("Packet too short! Packet #{hex} Definition #{$STATIONDEFS[res['station']]}") if (hex.size<pos*2+4)
       val = getLEint(hex,pos+=2,2)
       if $CONVERTERS[mdef[0]]
-        val = $CONVERTERS[mdef[0]].call(val)
+        val = $CONVERTERS[mdef[0]].call(val)        
+      end
+      if $VALIDATORS[mdef[0]]
+        allvalid &&= $VALIDATORS[mdef[0]].call(val)
+        # log("after validating #{mdef[0]}: allvalid=#{allvalid}")
       end
       val                               
     }
   }
-  return res
+  if allvalid
+    return res
+  else
+    return false
+  end
 end
 
 def err(what)
@@ -132,14 +150,19 @@ get '/loraconcentrator/packetin/:hex' do
   hex = params['hex']
   rssi = params['rssi']
   if checkSum(hex)
-    log("Got OK packet #{hex}")
+    # log("Got OK packet #{hex}")
     p = decodePacket(hex,rssi)
-    j = toJSON(p)
-    log(decodePacket(hex).inspect)
-    log(j)
-    storePacket(p)
-    mqtt(p)
-    return "OK"
+    if p
+      j = toJSON(p)
+      log(p.inspect)
+      # log(j)
+      storePacket(p)
+      mqtt(p)
+      return "OK"
+    else
+      log("Bogous values, packet rejected")
+      return "Checksum ok, values out of range (double transmission error)"
+    end
   else
     log("Rejected packet for wrong checksum: #{hex}")
     return "Wrong checksum"
