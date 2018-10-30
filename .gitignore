@@ -6,3 +6,6 @@ doc
 *.log
 webserver/*.bash
 webserver/concentrator/mqtt.uri
+deploy.bash
+getback.bash
+
