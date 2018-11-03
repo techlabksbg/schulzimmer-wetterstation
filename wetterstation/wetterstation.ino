@@ -181,11 +181,11 @@ void loop() {
       currentUS = cur + diff*i/250;
       setServo();
       delay(19);
-      //neopixel_update(mySensors.ppmCO2, i);
+      neopixel_update(mySensors.ppmCO2, i);
     }
   } else {
-    //neopixelAnimate(5000);
-    delay(5000);
+    neopixelAnimate(5000);
+    //delay(5000);
   }
   counter++;
 }
