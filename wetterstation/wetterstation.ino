@@ -1,10 +1,8 @@
 unsigned int stationID = 1;
 unsigned int packetID = 0;
 
-#include <ESP32Servo.h>
-Servo myservo;  // create servo object to control a servo
-#define SERVOPIN 17
-float servomap[][2]={{400,2200},{1500,1200},{5000,600}};
+#include "zeiger.h"
+#include "myneopixel.h"
 
 #include "MySensors.h"
 MySensors mySensors;
@@ -66,7 +64,6 @@ void calibrate() {
 }
 
 
-int currentUS;
 
 void setup() {
   Serial.begin(115200);
@@ -76,9 +73,8 @@ void setup() {
   //calibrate();
   Serial.println("Initializing LoRa");
   loraSetup();
-  myservo.attach(SERVOPIN);
-  currentUS = servomap[0][1];
-  setServo();
+  zeiger_setup();
+  //neopixel_setup();
 }
 
 unsigned char packetBuffer[255];
@@ -154,25 +150,6 @@ void sendPacket() {
 
 int counter=0;
 
-int getServoUS(int ppm) {
-  if (ppm < servomap[0][0]) {
-    return servomap[0][1];
-  }
-  if (ppm > servomap[2][0]) {
-    return servomap[2][1];
-  }
-  int us = 0;
-  int i = 0;
-  if (ppm>=servomap[1][0]) {
-    i=1;
-  }
-  us = (int)(servomap[i][1]+(servomap[i+1][1]-servomap[i][1])*(ppm-servomap[i][0])/(servomap[i+1][0]-servomap[i][0]));
-  return us;
-}
-
-void setServo() {
-  myservo.writeMicroseconds(currentUS);
-}
 
 
 void loop() {
@@ -204,8 +181,10 @@ void loop() {
       currentUS = cur + diff*i/250;
       setServo();
       delay(19);
+      //neopixel_update(mySensors.ppmCO2, i);
     }
   } else {
+    //neopixelAnimate(5000);
     delay(5000);
   }
   counter++;

@@ -84,8 +84,8 @@ void setup()
 
 void loop()
 {
-    
-    strip.SetPixelColor(0, red);
+    float r = (millis()%256)*1.0;
+    strip.SetPixelColor(0, RgbColor(r,r,r));
     strip.Show();
     delay(2000);
     strip.SetPixelColor(0, green);
