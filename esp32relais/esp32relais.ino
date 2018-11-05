@@ -10,6 +10,13 @@ int spreadingFactor = 9;  // (7-12)
 float bandwidth = 31.25E3; // {7.8E3, 10.4E3, 15.6E3, 20.8E3, 31.25E3, 41.7E3, 62.5E3, 125E3, 250E3};
 #include <SPI.h>
 
+#include <WiFi.h>
+const char* ssid = "InfLabKSBG";
+const char *url = "http://192.168.1.20:4568/loraconcentrator/packetin/";
+char buffer[600];
+#include <HTTPClient.h>
+
+
 void loraSetParams() {
   Serial.printf("Setting spread to %d and bandwith to %f\r\n", spreadingFactor,bandwidth);
   
@@ -43,6 +50,11 @@ void setup() {
   Serial.begin(115200);
   Serial.println("Initializing LoRa");
   loraSetup();
+  WiFi.begin(ssid, NULL);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.println("Connecting to WiFi..");
+  }
 }
 
 unsigned char packetBuffer[255];
@@ -62,10 +74,20 @@ void loop() {
     if (packetLength) {
       int rssi = LoRa.packetRssi();
       Serial.printf("pkt len=%d, rssi=%d\r\n-->", packetLength, rssi);
+      strcpy(buffer,url);
+      int l = strlen(buffer);
       for (int i=0; i<packetLength; i++) {
         Serial.printf("%02x", packetBuffer[i]);
+        sprintf(buffer+l+2*i, "%02x",packetBuffer[i]);
       }
+      sprintf(buffer+l+2*packetLength, "?rssi=%d", rssi);
       Serial.println();
+      Serial.println(buffer);
+      HTTPClient http;
+ 
+      http.begin(buffer); 
+      int httpCode = http.GET();
+      Serial.printf("HTTP-Code: %d\r\n", httpCode);
     }
   }
 }
