@@ -74,7 +74,7 @@ void setup() {
   Serial.println("Initializing LoRa");
   loraSetup();
   zeiger_setup();
-  //neopixel_setup();
+  neopixel_setup();
 }
 
 unsigned char packetBuffer[255];
