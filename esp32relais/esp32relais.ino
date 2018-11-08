@@ -1,5 +1,23 @@
 #include<Arduino.h>
 
+// Watchdog stuff from https://github.com/espressif/arduino-esp32/blob/master/libraries/ESP32/examples/Timer/WatchdogTimer/WatchdogTimer.ino
+#include "esp_system.h"
+
+void IRAM_ATTR resetModule() {
+  Serial.println("Reboot by Watchdog");
+  ets_printf("reboot\n");
+  esp_restart();
+}
+
+hw_timer_t *timer = NULL;
+void watchdogSetup() {
+  timer = timerBegin(0, 8000, true);                  //8000, -> 0.1ms
+  timerAttachInterrupt(timer, &resetModule, true);  //attach callback
+  timerAlarmWrite(timer, 300000L, true); //set time in 0.1 ms, 30 seconds
+  timerAlarmEnable(timer);  
+}
+
+
 // LoRa Stuff, see also (I think) https://github.com/Heltec-Aaron-Lee/WiFi_Kit_series/blob/master/esp32/libraries/LoRa/API.md
 #include <LoRa.h>
 #define SS      18
@@ -73,11 +91,7 @@ void wifiScan() {
     Serial.println("");
 }
 
-void setup() {
-  Serial.begin(115200);
-  Serial.println("Initializing LoRa");
-  loraSetup();
-  
+void wifiConnect() {
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   delay(100);
@@ -89,7 +103,15 @@ void setup() {
     delay(1000);
     Serial.println("Connecting to WiFi..");
   }
-  Serial.println("OK, waiting for LoRa packets...");
+  Serial.println("OK, waiting for LoRa packets...");  
+}
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Initializing LoRa");
+  loraSetup();
+  wifiConnect();
+  watchdogSetup();
 }
 
 unsigned char packetBuffer[255];
@@ -98,6 +120,12 @@ unsigned char packetLength=0;
 void loop() {
   int conf=0;
   int packetLength = LoRa.parsePacket();
+  timerWrite(timer, 0); //reset timer (feed watchdog)
+  
+  /*for (int i=0; i<60; i++) {
+    Serial.printf("Waiting for watchdog... %d\r\n",i);
+    delay(1000);
+  }/**/
   if (packetLength) {
     for (int i=0; LoRa.available(); i++) {
       if (i<sizeof(packetBuffer)) {
@@ -118,6 +146,10 @@ void loop() {
       sprintf(buffer+l+2*packetLength, "?rssi=%d", rssi);
       Serial.println();
       Serial.println(buffer);
+
+      if (WiFi.status() != WL_CONNECTED) {
+        wifiConnect();
+      }
       HTTPClient http;
  
       http.begin(buffer); 
