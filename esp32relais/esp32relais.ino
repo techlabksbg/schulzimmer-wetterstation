@@ -11,7 +11,7 @@ float bandwidth = 31.25E3; // {7.8E3, 10.4E3, 15.6E3, 20.8E3, 31.25E3, 41.7E3, 6
 #include <SPI.h>
 
 #include <WiFi.h>
-const char* ssid = "InfLabKSBG";
+const char *ssid = "InfLabKSBG";
 const char *url = "http://192.168.1.20:4568/loraconcentrator/packetin/";
 char buffer[600];
 #include <HTTPClient.h>
@@ -46,15 +46,50 @@ void loraSetup() {
 
 }
 
+// Cowardly copied from https://github.com/espressif/arduino-esp32/blob/master/libraries/WiFi/examples/WiFiScan/WiFiScan.ino
+void wifiScan() {
+    Serial.println("scan start");
+
+    // WiFi.scanNetworks will return the number of networks found
+    int n = WiFi.scanNetworks();
+    Serial.println("scan done");
+    if (n == 0) {
+        Serial.println("no networks found");
+    } else {
+        Serial.print(n);
+        Serial.println(" networks found");
+        for (int i = 0; i < n; ++i) {
+            // Print SSID and RSSI for each network found
+            Serial.print(i + 1);
+            Serial.print(": ");
+            Serial.print(WiFi.SSID(i));
+            Serial.print(" (");
+            Serial.print(WiFi.RSSI(i));
+            Serial.print(")");
+            Serial.println((WiFi.encryptionType(i) == WIFI_AUTH_OPEN)?" ":"*");
+            delay(10);
+        }
+    }
+    Serial.println("");
+}
+
 void setup() {
   Serial.begin(115200);
   Serial.println("Initializing LoRa");
   loraSetup();
-  WiFi.begin(ssid, NULL);
+  
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  delay(100);
+  wifiScan();
+  delay(1000);
+  Serial.printf("Connecting to %s...\r\n", ssid);
+  WiFi.begin(ssid, "");
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+    delay(1000);
     Serial.println("Connecting to WiFi..");
   }
+  Serial.println("OK, waiting for LoRa packets...");
 }
 
 unsigned char packetBuffer[255];
