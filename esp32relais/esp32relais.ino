@@ -13,7 +13,7 @@ hw_timer_t *timer = NULL;
 void watchdogSetup() {
   timer = timerBegin(0, 8000, true);                  //8000, -> 0.1ms
   timerAttachInterrupt(timer, &resetModule, true);  //attach callback
-  timerAlarmWrite(timer, 300000L, true); //set time in 0.1 ms, 30 seconds
+  timerAlarmWrite(timer, 990000L, true); //set time in 0.1 ms, 99 seconds
   timerAlarmEnable(timer);  
 }
 
@@ -117,16 +117,24 @@ void setup() {
 unsigned char packetBuffer[255];
 unsigned char packetLength=0;
 
+int loopCounter=0;
+
 void loop() {
   int conf=0;
+  loopCounter+=1;
+  if (loopCounter%1000==0) {
+    Serial.print('.');
+  }
+  delay(1);
   int packetLength = LoRa.parsePacket();
-  timerWrite(timer, 0); //reset timer (feed watchdog)
   
   /*for (int i=0; i<60; i++) {
     Serial.printf("Waiting for watchdog... %d\r\n",i);
     delay(1000);
   }/**/
   if (packetLength) {
+    timerWrite(timer, 0); //reset timer (feed watchdog)
+
     for (int i=0; LoRa.available(); i++) {
       if (i<sizeof(packetBuffer)) {
         packetBuffer[i]=(unsigned char)LoRa.read();
