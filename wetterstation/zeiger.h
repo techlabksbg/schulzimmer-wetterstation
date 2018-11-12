@@ -1,7 +1,7 @@
 #include <ESP32Servo.h>
 Servo myservo;  // create servo object to control a servo
 #define SERVOPIN 17
-float servomap[][2]={{400,2200},{1500,1200},{5000,600}};
+float servomap[][2]={{400,2235},{1500,1230},{5000,600}};
 
 int currentUS;
 

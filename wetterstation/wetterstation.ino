@@ -64,6 +64,24 @@ void calibrate() {
 }
 
 
+void zeigerNeopixelDemo() {
+  for (int ppm=500; ppm<=5000; ppm+=500) {
+    Serial.printf("Demo mit ppm=%d\r\n",ppm);
+    currentUS = getServoUS(ppm);
+    setServo();
+    for (int i=0; i<250; i++) {
+      delay(10);
+      neopixel_update(ppm, i);
+    }
+    for (int i=ppm; i<ppm+500; i+=5) {
+      delay(10);
+      currentUS = getServoUS(i);
+      setServo();
+      neopixel_update(i, 125);
+    }
+  }
+}
+
 
 void setup() {
   Serial.begin(115200);
@@ -75,6 +93,7 @@ void setup() {
   loraSetup();
   zeiger_setup();
   neopixel_setup();
+  zeigerNeopixelDemo();
 }
 
 unsigned char packetBuffer[255];
