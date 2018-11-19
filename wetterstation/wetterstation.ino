@@ -69,10 +69,13 @@ void zeigerNeopixelDemo() {
     Serial.printf("Demo mit ppm=%d\r\n",ppm);
     currentUS = getServoUS(ppm);
     setServo();
-    for (int i=0; i<250; i++) {
-      delay(10);
-      neopixel_update(ppm, i);
+    for (int j=0; j<2; j++) {
+      for (int i=0; i<250; i++) {
+        delay(10);
+        neopixel_update(ppm, i);
+      }
     }
+    
     for (int i=ppm; i<ppm+500; i+=5) {
       delay(10);
       currentUS = getServoUS(i);
