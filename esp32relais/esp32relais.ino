@@ -58,7 +58,8 @@ void loraSetup() {
   
   if (!LoRa.begin(BAND)) {
     Serial.println("Starting LoRa failed!");
-    while (1);
+    delay(3000);
+    esp_restart();
   }
   Serial.println("LoRa Init OK!");
 
@@ -99,9 +100,13 @@ void wifiConnect() {
   delay(1000);
   Serial.printf("Connecting to %s...\r\n", ssid);
   WiFi.begin(ssid, "");
-  while (WiFi.status() != WL_CONNECTED) {
+  for (int i=0; (WiFi.status() != WL_CONNECTED); i++) {
     delay(1000);
     Serial.println("Connecting to WiFi..");
+    if (i>30) {
+      Serial.println("No connection after 30 secs, rebooting");
+      esp_restart();
+    }
   }
   Serial.println("OK, waiting for LoRa packets...");  
 }
