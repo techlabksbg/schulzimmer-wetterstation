@@ -168,6 +168,9 @@ void loop() {
       http.begin(buffer); 
       int httpCode = http.GET();
       Serial.printf("HTTP-Code: %d\r\n", httpCode);
+      if (httpCode!=200) {
+        esp_restart();
+      }
     }
   }
 }
