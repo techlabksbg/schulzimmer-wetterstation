@@ -43,9 +43,15 @@ void neopixel_update(int ppm, int iter) {
     //Serial.printf("  [%d]   %d -> %d\r\n",i,colormap[i][c+1], colormap[i][c+1]);
     rgb[c] = (uint8_t)(mul*(t*colormap[i+1][c+1]+(1-t)*colormap[i][c+1]));
   }
-  mycolor.R=rgb[0];
-  mycolor.G=rgb[1];
-  mycolor.B=rgb[2];
+  if (ppm<2500) {
+    mycolor.R=rgb[0];
+    mycolor.G=rgb[1];
+    mycolor.B=rgb[2];
+  } else { // red/blue flashing after 2500
+    mycolor.R = (iter%50<25) ? 255 : 0;
+    mycolor.B = 0;
+    mycolor.R = (iter%50<25) ? 0 : 255;
+  }
 //  Serial.printf("r=%d, g=%d, b=%d\r\n", rgb[0], rgb[1], rgb[2]);
   strip.SetPixelColor(0, colorGamma.Correct(mycolor));
   strip.Show();
