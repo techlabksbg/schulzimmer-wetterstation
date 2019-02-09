@@ -65,7 +65,7 @@ void calibrate() {
 
 
 void zeigerNeopixelDemo() {
-  for (int ppm=500; ppm<=5000; ppm+=500) {
+  for (int ppm=500; ppm<=3500; ppm+=500) {
     Serial.printf("Demo mit ppm=%d\r\n",ppm);
     currentUS = getServoUS(ppm);
     setServo();

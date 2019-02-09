@@ -14,9 +14,9 @@
 #include <NeoPixelBus.h>
 
 const uint16_t PixelCount = 1; // this example assumes 4 pixels, making it smaller will cause a failure
-const uint8_t PixelPin = 25;  // make sure to set this to the correct pin, ignored for Esp8266
+const uint8_t PixelPin = 13;  // make sure to set this to the correct pin, ignored for Esp8266
 
-#define colorSaturation 255
+#define colorSaturation 5
 
 // three element pixels, in different order and speeds
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
@@ -84,16 +84,16 @@ void setup()
 
 void loop()
 {
-    float r = (millis()%256)*1.0;
-    strip.SetPixelColor(0, RgbColor(r,r,r));
+    //float r = (millis()%256)*1.0;
+    strip.SetPixelColor(0, red);
     strip.Show();
-    delay(2000);
+    delay(200);
     strip.SetPixelColor(0, green);
     strip.Show();
-    delay(2000);
+    delay(200);
     strip.SetPixelColor(0, blue);
     strip.Show();
-    delay(2000);
+    delay(200);
 
 
 }
