@@ -65,24 +65,28 @@ void calibrate() {
 
 
 void zeigerNeopixelDemo() {
-  for (int ppm=500; ppm<=3500; ppm+=500) {
+  myservo_attach();
+  for (int ppm=500; ppm<=3000; ppm+=500) {
     Serial.printf("Demo mit ppm=%d\r\n",ppm);
     currentUS = getServoUS(ppm);
-    setServo();
+    delay(200);
+    myservo_detach();
     for (int j=0; j<2; j++) {
       for (int i=0; i<250; i++) {
         delay(10);
         neopixel_update(ppm, i);
       }
     }
-    
+    myservo_attach();
     for (int i=ppm; i<ppm+500; i+=5) {
       delay(10);
       currentUS = getServoUS(i);
       setServo();
       neopixel_update(i, 125);
     }
+    delay(200);
   }
+  myservo_detach();
 }
 
 
@@ -188,6 +192,7 @@ void loop() {
       Serial.printf("[mean] CO2=%d ppm (approx %d), TVOC=%d bpm, Temp0=%f C, Temp1=%f C, Temp2=%f C, RelHum=%f %%\r\n",
         mySensors.ppmCO2, mySensors.approxppmCO2, mySensors.ppbTVOC, mySensors.temp[0], mySensors.temp[1], mySensors.temp[2], mySensors.humidity);      
       counter = 0;
+      //targetUS=getServoUS(mySensors.ppmCO2);
       makePacket();
       sendPacket();
     }
@@ -197,17 +202,28 @@ void loop() {
       mySensors.ppmCO2, mySensors.approxppmCO2, mySensors.ppbTVOC, mySensors.temp[0], mySensors.temp[1], mySensors.temp[2], mySensors.humidity);
   }
   if (targetUS!=-1) {
+    currentUS = targetUS;
+    myservo_attach();
+    /*
     int diff =  targetUS - currentUS;
     int cur = currentUS;
-    for (int i=0; i<250; i++) {
-      currentUS = cur + diff*i/250;
+    myservo_attach();
+    for (int i=0; i<40; i++) {
+      currentUS = cur + diff*i/40;
       setServo();
-      delay(19);
+      delay(10);
       neopixel_update(mySensors.ppmCO2, i);
+    }
+    */    
+    for (int i=0; i<250; i++) {
+      neopixel_update(mySensors.ppmCO2,i);
+      delay(20);
+      if (i==20) {
+        myservo_detach();
+      }
     }
   } else {
     neopixelAnimate(5000);
-    //delay(5000);
   }
   counter++;
 }
