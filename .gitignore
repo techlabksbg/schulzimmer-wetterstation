@@ -8,4 +8,18 @@ webserver/*.bash
 webserver/concentrator/mqtt.uri
 deploy.bash
 getback.bash
+ESP32-Digital-RGB-LED-Drivers-master/
+PlayWav/
+buzzertest/
+esp32-28byj48-tester/
+esp32-get-id/
+esp32-i2s-dac-sound/
+loraoled-esp32-demo/
+metrics-graphics-2.15.6.tar.gz
+portablesensor/
+rooms.txt
+soundtest/
+webserver/concentrator/h21/
+webserver/server.rb
+wetterstation/url.txt
 

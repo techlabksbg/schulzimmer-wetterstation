@@ -1,0 +1,57 @@
+\documentclass{article}
+
+\usepackage[german]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+
+\title{Ziffernblatt für CO$_2$-Anzeige}
+\author{Ivo Blöchliger}
+
+\begin{document}
+\maketitle
+Ein Messwert $m \in [0,1]$ soll in einen Winkel $w \in [0,1]$
+umrechnet werden. Die Skala soll nicht-linear sein, so dass z.B. der
+Wert $\overline{m}=\frac{1500-400}{5000-400} = \frac{11}{46}$ in der
+Mitte platziert werden kann. (Skala von 400 bis 5000, 1500 in der
+Mitte).
+
+
+Wir suchen eine Funktion $f(x)$ so, dass $m = f(w)$ und $f^{-1}(m)=w$,
+was schlussendlich implementiert werden soll.
+
+Es gilt $f(0)=0$ und $f(1)=1$ und $f\left(\frac{1}{2}\right)=\overline{m}$.
+
+Die Skalenverkürzung soll möglichst gleichmässig erfolgen, d.h.\
+$f'(w)$ soll eine lineare Funktion sein. Also ist $f(w)$ eine
+quadratische Funktion $f(w) = aw^2+bw+c$. Aus den obigen Bedingungen
+folgt $c=0$ und
+\[
+a+b=1 \qquad \text{ und } \qquad \frac{1}{4}a+\frac{1}{2}b =
+\overline{m},
+\]
+woraus mit Maxima
+\begin{verbatim}
+solve([a+b=1, a+2*b=4*m], [a,b]);
+\end{verbatim}
+\[
+a = 2 - 4 m \qquad \text{ und } \qquad b = 4 m - 1
+\]
+folgt.
+
+Daraus folgt mit Maxima
+\begin{verbatim}
+solve((2-4*m)*w^2+(4*m-1)*w=y, w);
+\end{verbatim}
+\[
+f^{-1}(m) = {{\sqrt{\left(8-16\,\overline{m}\right)\,m+16\,\overline{m}^2-8\,\overline{m}+1}+
+ 4\,\overline{m}-1}\over{8\,\overline{m}-4}}.
+\]
+Für den Wert $\overline{m}=\frac{1500-400}{5000-400} = \frac{11}{46}$ erhält
+man
+\[
+w = f^{-1}(m) = {{\sqrt{2208\,m+1}+1
+  }\over{48}}
+\]
+
+
+\end{document}
