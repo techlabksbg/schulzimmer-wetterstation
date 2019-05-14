@@ -315,7 +315,7 @@ void loop() {
     );
 
     if (co2sensor.ppmCO2>2500) {
-      if (millis()-lastMelody>120000L) {
+      if (millis()-lastMelody>240000L) { // 4 Minutes until next song
         lastMelody = millis();
         funeral.play();
       }
