@@ -42,11 +42,13 @@ public:
           val=255;
         }
         dacWrite(PIN,val);
+        if (digitalRead(34)==LOW) break;
       }
       
       notes[evChannels[evPtr]] = periods[evNotes[evPtr]];
       pulse[evChannels[evPtr]] = micros();
       evPtr++;
+      if (digitalRead(34)==LOW) break;
     }
     digitalWrite(PIN, LOW);
   }

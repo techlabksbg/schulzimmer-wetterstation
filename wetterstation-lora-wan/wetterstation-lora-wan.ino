@@ -298,8 +298,10 @@ int usecs = 1500;
 
 void loop() {
   //Serial.printf("Limitpin 34 = %d\n", digitalRead(34));
-  if (digitalRead(34)==LOW) {
+  if (digitalRead(34)==LOW && millis()-lastMelody<300000L) { // Wait for 5 minutes until next song
     //Serial.println("Detected!");
+    while (digitalRead(34)==LOW);
+    lastMelody=millis();
     mario.play();
   }
   if (nextCall<millis()) {
