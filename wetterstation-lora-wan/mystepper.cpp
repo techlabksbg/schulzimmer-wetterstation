@@ -101,10 +101,11 @@ void MyStepper::gotoPos(int pos) {
 }
 
 void MyStepper::demo() {
-  for (int ppm=500; ppm<=5000; ppm+=500) {
+  for (int ppm=500; ppm<=3000; ppm+=500) {
     Serial.printf("Going to ppm=%d\n",ppm);
     gotoPPM(ppm);
     delay(1000);
+    if (ppm>1500) ppm+=500;
   }
   gotoPPM(400);
 }
@@ -130,6 +131,10 @@ void MyStepper::home() {
   while (digitalRead(limitpin)==HIGH) {
     backward();
     delay(40);
+  }
+  while (digitalRead(limitpin)==LOW) {
+    forward();
+    delay(80);
   }
   //Serial.printf("Last home at pin=%d\n",digitalRead(limitpin));
   motorposition=zeropos;

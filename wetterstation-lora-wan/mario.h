@@ -8,7 +8,8 @@ public:
   int POLY = 3;
   int PIN = 26;
 
-  unsigned long periods[128];
+  unsigned long periods[128];  
+
 
   void computePeriods() {
     periods[0]=0;
@@ -17,17 +18,31 @@ public:
     }
   }
 
-  void play() {
+  void play(bool alles) {
     const int PULSE = 30;
+    unsigned int evPlayed = numEv;
+    if (!alles) {
+      evPlayed = 36; 
+    }
+
+  while (digitalRead(34)==LOW) {
+    delay(10);
+  }
+
+    
     unsigned long tnow = millis();
     unsigned long usnow = micros();
     unsigned long notes[POLY];
     unsigned long pulse[POLY];
     unsigned int evPtr = 0;
+
+
+    
     for (int c=0; c<POLY; c++) {
       notes[c]=0;
     }
-    while (evPtr<numEv) {
+    while (evPtr<evPlayed) {
+      Serial.printf("Playing Event %d of %d\n", evPtr, numEv);
       // Wait for tone change event
       while (millis()-tnow < (unsigned long)(evTime[evPtr])) {
         // Make sound on Channels
@@ -51,6 +66,8 @@ public:
       if (digitalRead(34)==LOW) break;
     }
     digitalWrite(PIN, LOW);
+    while (digitalRead(34)==LOW);
+    delay(100);
   }
 
   void begin() {

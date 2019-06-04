@@ -285,10 +285,14 @@ void setup() {
     // Set data rate and transmit power for uplink (note: txpow seems to be ignored by the library)
     LMIC_setDrTxpow(DR_SF7,14);
 
-    // Start job
-    do_send(&sendjob);
+
+    mario.play(false);
 
     myStepper.demo();
+
+        // Start job
+    do_send(&sendjob);
+
 }
 
 unsigned long nextCall=0;
@@ -296,13 +300,23 @@ unsigned long lastMelody=0;
 
 int usecs = 1500;
 
+int lastLimit = -1;
+
 void loop() {
-  //Serial.printf("Limitpin 34 = %d\n", digitalRead(34));
-  if (digitalRead(34)==LOW && millis()-lastMelody>300000L) { // Wait for 5 minutes until next song
-    //Serial.println("Detected!");
+  if (digitalRead(34)!=lastLimit) {
+    lastLimit = digitalRead(34);
+    Serial.printf("Limitpin 34 = %d at %d ms, lastMelody=%d, Difference=%d\n", digitalRead(34), millis(), lastMelody, millis()-lastMelody);  
+  }
+  
+  if (lastLimit==LOW && (millis()-lastMelody>300000L || lastMelody==0)) { // Wait for 5 minutes until next song
+    Serial.printf("Detected at %d ms, lastMelody=%d, Difference = %d\n", millis(), lastMelody, millis()-lastMelody);
+    delay(100);
     while (digitalRead(34)==LOW);
     lastMelody=millis();
-    mario.play();
+    delay(100);
+    while (digitalRead(34)==LOW);
+    delay(300);
+    mario.play(true);
   }
   if (nextCall<millis()) {
     nextCall = millis()+5000;
@@ -317,7 +331,7 @@ void loop() {
     );
 
     if (co2sensor.ppmCO2>2500) {
-      if (millis()-lastMelody>240000L) { // 4 Minutes until next song
+      if (millis()-lastMelody>300000L) { // 5 Minutes until next song
         lastMelody = millis();
         funeral.play();
       }
