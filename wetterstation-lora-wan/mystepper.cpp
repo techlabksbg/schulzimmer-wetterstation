@@ -116,8 +116,10 @@ void MyStepper::home() {
   mystrip.Show();
 
   Serial.printf("Start home at pin=%d\n",digitalRead(limitpin));
-  while (digitalRead(limitpin)==HIGH) {
+  int failsave = fullpos;
+  while (digitalRead(limitpin)==HIGH && failsave>0) {
     backward();
+    failsave--;
     delay(5);
   }
   delay(500);
@@ -128,8 +130,10 @@ void MyStepper::home() {
   }
   delay(200);
   Serial.printf("Second home at pin=%d\n",digitalRead(limitpin));
-  while (digitalRead(limitpin)==HIGH) {
+  failsave = 50;
+  while (digitalRead(limitpin)==HIGH && failsave>0) {
     backward();
+    failsave--;
     delay(40);
   }
   while (digitalRead(limitpin)==LOW) {
