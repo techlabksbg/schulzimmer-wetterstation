@@ -136,8 +136,10 @@ void MyStepper::home() {
     failsave--;
     delay(40);
   }
-  while (digitalRead(limitpin)==LOW) {
+  failsave = 10;
+  while (digitalRead(limitpin)==LOW & failsave>0) {
     forward();
+    failsave--;
     delay(80);
   }
   //Serial.printf("Last home at pin=%d\n",digitalRead(limitpin));

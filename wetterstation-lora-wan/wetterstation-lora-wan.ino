@@ -311,12 +311,18 @@ void loop() {
   if (lastLimit==LOW && (millis()-lastMelody>300000L || lastMelody==0)) { // Wait for 5 minutes until next song
     Serial.printf("Detected at %d ms, lastMelody=%d, Difference = %d\n", millis(), lastMelody, millis()-lastMelody);
     delay(100);
-    while (digitalRead(34)==LOW);
+    long maxWait = millis()+2000; // Bail out after 2secs
+    while (digitalRead(34)==LOW && maxWait<millis());
     lastMelody=millis();
-    delay(100);
-    while (digitalRead(34)==LOW);
-    delay(300);
-    mario.play(true);
+    if (maxWait>millis()) {
+      delay(100);
+      maxWait = millis()+2000;
+      while (digitalRead(34)==LOW && maxWait<millis());
+      if (maxWait>millis()) {
+        delay(300);
+        mario.play(true);
+      }
+    }
   }
   if (nextCall<millis()) {
     nextCall = millis()+5000;
