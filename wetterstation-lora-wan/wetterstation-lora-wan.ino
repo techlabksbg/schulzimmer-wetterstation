@@ -1,3 +1,10 @@
+// Install MCCI Arduino LoRaWAN Library
+// adjust Arduino/libraries/MCCI_LoRaWAN_LMIC_library/project_config/lmic_project_config.h
+// #define CFG_eu868 1
+// #define CFG_sx1276_radio 1
+
+
+
 /*******************************************************************************
  * Copyright (c) 2015 Thomas Telkamp and Matthijs Kooijman
  * Copyright (c) 2018 Terry Moore, MCCI
@@ -35,7 +42,20 @@
  // [feather] adafruit-feather-m0-radio-with-lora-module.pdf
 
 #include <lmic.h>
+
 #include <hal/hal.h>
+
+// Pin mapping
+// Adapted for Feather M0 per p.10 of [feather]
+const lmic_pinmap lmic_pins = {
+    .nss = 27,                       // chip select on feather (rf95module) CS
+    .rxtx = LMIC_UNUSED_PIN,
+    .rst = 4,                       // reset pin
+    .dio = {14, 17, LMIC_UNUSED_PIN}, // assumes external jumpers [feather_lora_jumper]
+                                    // DIO1 is on JP1-1: is io1 - we connect to GPO6
+                                    // DIO1 is on JP5-3: is D2 - we connect to GPO5
+};
+
 #include <SPI.h>
 
 #include "co2sensor.h"
@@ -103,16 +123,6 @@ static osjob_t sendjob;
 // cycle limitations).
 const unsigned TX_INTERVAL = 120;
 
-// Pin mapping
-// Adapted for Feather M0 per p.10 of [feather]
-const lmic_pinmap lmic_pins = {
-    .nss = 27,                       // chip select on feather (rf95module) CS
-    .rxtx = LMIC_UNUSED_PIN,
-    .rst = 4,                       // reset pin
-    .dio = {14, 17, LMIC_UNUSED_PIN}, // assumes external jumpers [feather_lora_jumper]
-                                    // DIO1 is on JP1-1: is io1 - we connect to GPO6
-                                    // DIO1 is on JP5-3: is D2 - we connect to GPO5
-};
 
 void onEvent (ev_t ev) {
     Serial.print(os_getTime());
@@ -288,7 +298,7 @@ void setup() {
 
     mario.play(false);
 
-    myStepper.demo();
+     myStepper.demo();
 
         // Start job
     do_send(&sendjob);
